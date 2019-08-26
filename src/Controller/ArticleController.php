@@ -2,10 +2,12 @@
 
 namespace App\Controller;
 
+use App\Service\MarkdownHelper;
 use Michelf\MarkdownInterface;
 use Psr\Log\LoggerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Cache\Adapter\AdapterInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Twig\Environment;
@@ -22,8 +24,12 @@ class ArticleController extends AbstractController
 
     /**
      * @Route("/news/{slug}", name="article_show")
+     * @param $slug
+     * @param MarkdownInterface $markdown
+     * @param AdapterInterface $cache
+     * @return Response
      */
-    public function show($slug, MarkdownInterface $markdown)
+    public function show($slug, MarkdownInterface $markdown, AdapterInterface $cache, MarkdownHelper $markdownHelper)
     {
         $comments = [
             'I ate a normal rock once. It did NOT taste like bacon!',
@@ -35,7 +41,7 @@ class ArticleController extends AbstractController
 Spicy **jalapeno bacon** ipsum dolor amet veniam shank in dolore. Ham hock nisi landjaeger cow,
 lorem proident [beef ribs] (https://test.com) aute enim veniam ut cillum pork chuck picanha. Dolore reprehenderit
 labore minim pork belly spare ribs cupim short loin in. Elit exercitation eiusmod dolore cow
-turkey shank eu pork belly meatball non cupim.
+**turkey** shank eu pork belly meatball non cupim.
 
 Laboris beef ribs fatback fugiat eiusmod jowl kielbasa alcatra dolore velit ea ball tip. Pariatur
  laboris sunt venison, et laborum dolore minim non meatball. Shankle eu flank aliqua shoulder,
@@ -62,7 +68,7 @@ adipisicing cow cillum tenderloin.
 EOF;
 
 
-        $articleContent = $markdown->transform($articleContent);
+        $articleContent = $markdownHelper->parse($articleContent, $cache, $markdown);
         return $this->render('article/show.html.twig', [
             'title' => ucwords(str_replace('-', ' ', $slug)),
             'articleContent' => $articleContent,
